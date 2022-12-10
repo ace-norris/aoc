@@ -52,85 +52,15 @@ func (i position) key() string {
 	return fmt.Sprintf("%v:%v", i.X, i.Y)
 }
 
-func newPosition(x, y int) position {
-	return position{x, y}
-}
-
-type grid struct {
-	HeadPositions []position
-	TailPositions []position
-}
-
-func (i *grid) applyInstruction(instruction instruction) {
-	for j := 0; j < instruction.Count; j++ {
-		chp := i.HeadPositions[len(i.HeadPositions)-1]
-		ctp := i.TailPositions[len(i.TailPositions)-1]
-
-		nhp := i.nextHeadPosition(chp, instruction)
-		ntp := i.nextTailPosition(chp, ctp, nhp)
-
-		i.HeadPositions = append(i.HeadPositions, nhp)
-		i.TailPositions = append(i.TailPositions, ntp)
-	}
-}
-
-func (i grid) nextHeadPosition(current position, instruction instruction) position {
-	switch instruction.Direction {
-	case "U":
-		return newPosition(current.X-1, current.Y)
-	case "D":
-		return newPosition(current.X+1, current.Y)
-	case "L":
-		return newPosition(current.X, current.Y-1)
-	case "R":
-		return newPosition(current.X, current.Y+1)
-	default:
-		return current
-	}
-}
-
-func (i grid) nextTailPosition(chead, ctail, nhead position) position {
-	if ctail.X == nhead.X && ctail.Y == nhead.Y {
+func (i position) adjacent(p position) bool {
+	if i.X == p.X && i.Y == p.Y {
 		// . . .
 		// . S .
 		// . . .
-		return ctail
+		return true
 	}
 
-	if ctail.Y == nhead.Y && (ctail.X+1 == nhead.X || ctail.X-1 == nhead.X) {
-		// . T .
-		// . H .
-		// . . .
-
-		// . . .
-		// . H .
-		// . T .
-		return ctail
-	}
-
-	if ctail.Y-1 == nhead.Y && (ctail.X+1 == nhead.X || ctail.X-1 == nhead.X) {
-		// . . T
-		// . H .
-		// . . .
-
-		// . . .
-		// . H .
-		// . . T
-		return ctail
-	}
-
-	if ctail.Y+1 == nhead.Y && (ctail.X+1 == nhead.X || ctail.X-1 == nhead.X) {
-		// T . .
-		// . H .
-		// . . .
-
-		// . . .
-		// . H .
-		// T . .
-		return ctail
-	}
-
-	if ctail.X == nhead.X && (ctail.Y+1 == nhead.Y || ctail.Y-1 == nhead.Y) {
+	if i.Y == p.Y && (i.X+1 == p.X || i.X-1 == p.X) {
 		// . . .
 		// . H T
 		// . . .
@@ -138,10 +68,149 @@ func (i grid) nextTailPosition(chead, ctail, nhead position) position {
 		// . . .
 		// T H .
 		// . . .
-		return ctail
+		return true
 	}
 
-	return chead
+	if i.Y-1 == p.Y && (i.X+1 == p.X || i.X-1 == p.X) {
+		// . . .
+		// . H .
+		// T . .
+
+		// . . .
+		// . H .
+		// . . T
+		return true
+	}
+
+	if i.Y+1 == p.Y && (i.X+1 == p.X || i.X-1 == p.X) {
+		// T . .
+		// . H .
+		// . . .
+
+		// . . T
+		// . H .
+		// . . .
+		return true
+	}
+
+	if i.X == p.X && (i.Y+1 == p.Y || i.Y-1 == p.Y) {
+		// . T .
+		// . H .
+		// . . .
+
+		// . . .
+		// . H .
+		// . T .
+		return true
+	}
+
+	return false
+}
+
+func (i position) move(direction string) position {
+	switch direction {
+	case "U":
+		return newPosition(i.X, i.Y+1)
+	case "D":
+		return newPosition(i.X, i.Y-1)
+	case "L":
+		return newPosition(i.X-1, i.Y)
+	case "R":
+		return newPosition(i.X+1, i.Y)
+	default:
+		return i.clone()
+	}
+}
+
+func (i position) follow(in position) position {
+	n := i.clone()
+	if n.adjacent(in) {
+		return n
+	}
+
+	if i.X-2 == in.X && i.Y == in.Y {
+		n = i.move("L")
+	}
+	if i.X+2 == in.X && i.Y == in.Y {
+		n = i.move("R")
+	}
+	if i.Y+2 == in.Y && i.X == in.X {
+		n = i.move("U")
+	}
+	if i.Y-2 == in.Y && i.X == in.X {
+		n = i.move("D")
+	}
+
+	if n.adjacent(in) {
+		return n
+	}
+
+	if n.Y > in.Y {
+		n = n.move("D")
+	}
+
+	if n.Y < in.Y {
+		n = n.move("U")
+	}
+
+	if n.X > in.X {
+		n = n.move("L")
+	}
+
+	if n.X < in.X {
+		n = n.move("R")
+	}
+
+	return n
+}
+
+func (i position) clone() position {
+	return newPosition(i.X, i.Y)
+}
+
+func newPosition(x, y int) position {
+	return position{x, y}
+}
+
+type grid struct {
+	TailLength    int
+	HeadPositions []position
+	TailPositions [][]position
+}
+
+func (i *grid) applyInstruction(instruction instruction) {
+	for j := 0; j < instruction.Count; j++ {
+		chp := i.HeadPositions[len(i.HeadPositions)-1]
+		ctps := i.TailPositions[len(i.TailPositions)-1]
+		nhp := chp.move(instruction.Direction)
+
+		i.HeadPositions = append(i.HeadPositions, nhp)
+		i.TailPositions = append(i.TailPositions, i.nextTailPositions(nhp, ctps))
+	}
+}
+
+func (i grid) nextTailPositions(head position, ctps []position) []position {
+	out := []position{}
+	for j, p := range ctps {
+		pp := head.clone()
+		if len(out) > 0 {
+			pp = out[j-1]
+		}
+
+		out = append(out, p.follow(pp))
+	}
+
+	return out
+}
+
+func (i grid) extractTailPositions(in int) []position {
+	out := []position{}
+
+	for _, v := range i.TailPositions {
+		out = append(out, v[in])
+	}
+
+	return out
 }
 
 func (i grid) uniquePositions(positions []position) []position {
@@ -188,16 +257,16 @@ func (i grid) string(positions []position) string {
 	}
 
 	out := ""
-	for x := minx; x <= maxx; x++ {
-		for y := miny; y <= maxy; y++ {
+	for y := maxy; y >= miny; y-- {
+		for x := minx; x <= maxx; x++ {
 			if _, ok := up[newPosition(x, y).key()]; ok {
 				if x == 0 && y == 0 {
-					out += "S "
+					out += "S"
 				} else {
-					out += "# "
+					out += "#"
 				}
 			} else {
-				out += ". "
+				out += "."
 			}
 		}
 		out += "\n"
@@ -206,35 +275,41 @@ func (i grid) string(positions []position) string {
 	return out
 }
 
-func newGrid() grid {
+func newGrid(tailLength int) grid {
+	tp := []position{}
+	for i := 0; i < tailLength; i++ {
+		tp = append(tp, newPosition(0, 0))
+	}
+
 	return grid{
+		TailLength:    tailLength,
 		HeadPositions: []position{newPosition(0, 0)},
-		TailPositions: []position{newPosition(0, 0)},
+		TailPositions: [][]position{tp},
 	}
 }
 
 func exercise1(in string) (int, string) {
 	var (
 		instructions = newInstructions(in)
-		grid         = newGrid()
+		grid         = newGrid(1)
 	)
 	for _, instruction := range instructions {
 		grid.applyInstruction(instruction)
 	}
 
-	return len(grid.uniquePositions(grid.TailPositions)), grid.string(grid.TailPositions)
+	tp := grid.extractTailPositions(grid.TailLength - 1)
+	return len(grid.uniquePositions(tp)), grid.string(tp)
 }
 
-func exercise2(in string) int {
-	scanner := bufio.NewScanner(strings.NewReader(in))
-
+func exercise2(in string) (int, string) {
 	var (
-		total = 0
+		instructions = newInstructions(in)
+		grid         = newGrid(9)
 	)
-	for scanner.Scan() {
-		// line := strings.TrimSpace(scanner.Text())
-		total++
+	for _, instruction := range instructions {
+		grid.applyInstruction(instruction)
 	}
 
-	return total
+	tp := grid.extractTailPositions(grid.TailLength - 1)
+	return len(grid.uniquePositions(tp)), grid.string(tp)
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 )
 
@@ -14,13 +13,13 @@ func Test_exercise1(t *testing.T) {
 	}{
 		{
 			Stream: `R 4
-						U 4
-						L 3
-						D 1
-						R 4
-						D 1
-						L 5
-						R 2`,
+									U 4
+									L 3
+									D 1
+									R 4
+									D 1
+									L 5
+									R 2`,
 			Expected: 13,
 		},
 		{
@@ -38,13 +37,11 @@ func Test_exercise1(t *testing.T) {
 
 		// assert
 		if count != c.Expected {
-
 			t.Errorf("Case: %v, Expected: %v, Actual: %v", i, c.Expected, count)
 		}
 	}
 }
 
-/*
 func Test_exercise2(t *testing.T) {
 	// arrange
 	cs := []struct {
@@ -52,30 +49,54 @@ func Test_exercise2(t *testing.T) {
 		Expected int
 	}{
 		{
+			Stream: `R 4
+					U 4
+					L 3
+					D 1
+					R 4
+					D 1
+					L 5
+					R 2`,
+			Expected: 1,
+		},
+		{
+			Stream: `R 5
+					U 8
+					L 8
+					D 3
+					R 17
+					D 10
+					L 25
+					U 20`,
+			Expected: 36,
+		},
+
+		{
 			Stream:   stream,
-			Expected: 0,
+			Expected: 2516,
 		},
 	}
 
 	// act
 	for i, c := range cs {
-		out := exercise2(c.Stream)
+		count, vis := exercise2(c.Stream)
+		if count < 200 {
+			fmt.Println(vis)
+		}
 
 		// assert
-		if out != c.Expected {
-			t.Errorf("Case: %v, Expected: %v, Actual: %v", i, c.Expected, out)
+		if count != c.Expected {
+			t.Errorf("Case: %v, Expected: %v, Actual: %v", i, c.Expected, count)
 		}
 	}
 }
-*/
 
-func Test_nextTailPosition(t *testing.T) {
+func Test_position_adjacent(t *testing.T) {
 	// arrange
 	cs := []struct {
 		NextHeadPosition    position
-		CurrentHeadPosition position
 		CurrentTailPosition position
-		Expected            position
+		Expected            bool
 	}{
 		// don't move T
 		{
@@ -83,9 +104,8 @@ func Test_nextTailPosition(t *testing.T) {
 			// . S .
 			// . . .
 			NextHeadPosition:    newPosition(1, 1),
-			CurrentHeadPosition: newPosition(1, 1),
 			CurrentTailPosition: newPosition(1, 1),
-			Expected:            newPosition(1, 1),
+			Expected:            true,
 		},
 
 		{
@@ -93,72 +113,64 @@ func Test_nextTailPosition(t *testing.T) {
 			// . H .
 			// . . .
 			NextHeadPosition:    newPosition(1, 1),
-			CurrentHeadPosition: newPosition(2, 1),
-			CurrentTailPosition: newPosition(2, 1),
-			Expected:            newPosition(2, 1),
+			CurrentTailPosition: newPosition(1, 2),
+			Expected:            true,
 		},
 		{
 			// . . .
 			// . H .
 			// . T .
 			NextHeadPosition:    newPosition(1, 1),
-			CurrentHeadPosition: newPosition(0, 1),
-			CurrentTailPosition: newPosition(0, 1),
-			Expected:            newPosition(0, 1),
-		},
-		{
-			// . . T
-			// . H .
-			// . . .
-			NextHeadPosition:    newPosition(1, 1),
-			CurrentHeadPosition: newPosition(2, 2),
-			CurrentTailPosition: newPosition(2, 2),
-			Expected:            newPosition(2, 2),
-		},
-		{
-			// . . .
-			// . H .
-			// . . T
-			NextHeadPosition:    newPosition(1, 1),
-			CurrentHeadPosition: newPosition(0, 2),
-			CurrentTailPosition: newPosition(0, 2),
-			Expected:            newPosition(0, 2),
-		},
-		{
-			// T . .
-			// . H .
-			// . . .
-			NextHeadPosition:    newPosition(1, 1),
-			CurrentHeadPosition: newPosition(2, 0),
-			CurrentTailPosition: newPosition(2, 0),
-			Expected:            newPosition(2, 0),
-		},
-		{
-			// . . .
-			// . H .
-			// T . .
-			NextHeadPosition:    newPosition(1, 1),
-			CurrentHeadPosition: newPosition(0, 0),
 			CurrentTailPosition: newPosition(0, 0),
-			Expected:            newPosition(0, 0),
+			Expected:            true,
+		},
+		{
+			// . . T
+			// . H .
+			// . . .
+			NextHeadPosition:    newPosition(1, 1),
+			CurrentTailPosition: newPosition(2, 2),
+			Expected:            true,
+		},
+		{
+			// . . .
+			// . H .
+			// . . T
+			NextHeadPosition:    newPosition(1, 1),
+			CurrentTailPosition: newPosition(2, 0),
+			Expected:            true,
+		},
+		{
+			// T . .
+			// . H .
+			// . . .
+			NextHeadPosition:    newPosition(1, 1),
+			CurrentTailPosition: newPosition(0, 2),
+			Expected:            true,
+		},
+		{
+			// . . .
+			// . H .
+			// T . .
+			NextHeadPosition:    newPosition(1, 1),
+			CurrentTailPosition: newPosition(0, 0),
+			Expected:            true,
 		},
 		{
 			// . . .
 			// . H T
 			// . . .
 			NextHeadPosition:    newPosition(1, 1),
-			CurrentHeadPosition: newPosition(1, 2),
-			CurrentTailPosition: newPosition(1, 2),
-			Expected:            newPosition(1, 2),
+			CurrentTailPosition: newPosition(2, 1),
+			Expected:            true,
 		},
 		{
 			// . . .
 			// T H .
 			// . . .
-			NextHeadPosition:    newPosition(1, 0),
-			CurrentHeadPosition: newPosition(1, 0),
-			CurrentTailPosition: newPosition(1, 0),
-			Expected:            newPosition(1, 0),
+			NextHeadPosition:    newPosition(1, 1),
+			CurrentTailPosition: newPosition(0, 1),
+			Expected:            true,
 		},
 
 		// move T to previous H
@@ -166,119 +178,106 @@ func Test_nextTailPosition(t *testing.T) {
 			// . H .
 			// . # .
 			// . T .
-			NextHeadPosition:    newPosition(2, 1),
-			CurrentHeadPosition: newPosition(1, 1),
-			CurrentTailPosition: newPosition(0, 1),
-			Expected:            newPosition(1, 1),
+			NextHeadPosition:    newPosition(1, 2),
+			CurrentTailPosition: newPosition(1, 0),
+			Expected:            false,
 		},
 		{
 			// . H .
 			// . # .
 			// T . .
-			NextHeadPosition:    newPosition(2, 1),
-			CurrentHeadPosition: newPosition(1, 1),
+			NextHeadPosition:    newPosition(1, 2),
 			CurrentTailPosition: newPosition(0, 0),
-			Expected:            newPosition(1, 1),
+			Expected:            false,
 		},
 		{
 			// . . .
 			// . # H
 			// T . .
-			NextHeadPosition:    newPosition(1, 2),
-			CurrentHeadPosition: newPosition(1, 1),
+			NextHeadPosition:    newPosition(2, 1),
 			CurrentTailPosition: newPosition(0, 0),
-			Expected:            newPosition(1, 1),
+			Expected:            false,
 		},
 		{
 			// . . .
 			// T # H
 			// . . .
-			NextHeadPosition:    newPosition(1, 2),
-			CurrentHeadPosition: newPosition(1, 1),
-			CurrentTailPosition: newPosition(1, 0),
-			Expected:            newPosition(1, 1),
+			NextHeadPosition:    newPosition(2, 1),
+			CurrentTailPosition: newPosition(0, 1),
+			Expected:            false,
 		},
 		{
 			// T . .
 			// . # H
 			// . . .
-			NextHeadPosition:    newPosition(1, 2),
-			CurrentHeadPosition: newPosition(1, 1),
-			CurrentTailPosition: newPosition(2, 0),
-			Expected:            newPosition(1, 1),
+			NextHeadPosition:    newPosition(2, 1),
+			CurrentTailPosition: newPosition(0, 2),
+			Expected:            false,
 		},
 		{
 			// T . .
 			// . # .
 			// . H .
-			NextHeadPosition:    newPosition(0, 1),
-			CurrentHeadPosition: newPosition(1, 1),
-			CurrentTailPosition: newPosition(2, 0),
-			Expected:            newPosition(1, 1),
+			NextHeadPosition:    newPosition(1, 0),
+			CurrentTailPosition: newPosition(0, 2),
+			Expected:            false,
 		},
 		{
 			// . T .
 			// . # .
 			// . H .
-			NextHeadPosition:    newPosition(0, 1),
-			CurrentHeadPosition: newPosition(1, 1),
-			CurrentTailPosition: newPosition(2, 1),
-			Expected:            newPosition(1, 1),
+			NextHeadPosition:    newPosition(1, 0),
+			CurrentTailPosition: newPosition(1, 2),
+			Expected:            false,
 		},
 		{
 			// . . T
 			// . # .
 			// . H .
-			NextHeadPosition:    newPosition(0, 1),
-			CurrentHeadPosition: newPosition(1, 1),
+			NextHeadPosition:    newPosition(1, 0),
 			CurrentTailPosition: newPosition(2, 2),
-			Expected:            newPosition(1, 1),
+			Expected:            false,
 		},
 		{
 			// . . T
 			// H # .
 			// . . .
-			NextHeadPosition:    newPosition(1, 0),
-			CurrentHeadPosition: newPosition(1, 1),
+			NextHeadPosition:    newPosition(0, 1),
 			CurrentTailPosition: newPosition(2, 2),
-			Expected:            newPosition(1, 1),
+			Expected:            false,
 		},
 		{
 			// . . .
 			// H # T
 			// . . .
-			NextHeadPosition:    newPosition(1, 0),
-			CurrentHeadPosition: newPosition(1, 1),
-			CurrentTailPosition: newPosition(1, 2),
-			Expected:            newPosition(1, 1),
+			NextHeadPosition:    newPosition(0, 1),
+			CurrentTailPosition: newPosition(2, 1),
+			Expected:            false,
 		},
 		{
 			// . . .
 			// H # .
 			// . . T
-			NextHeadPosition:    newPosition(1, 0),
-			CurrentHeadPosition: newPosition(1, 1),
-			CurrentTailPosition: newPosition(0, 2),
-			Expected:            newPosition(1, 1),
+			NextHeadPosition:    newPosition(0, 1),
+			CurrentTailPosition: newPosition(2, 0),
+			Expected:            false,
 		},
 		{
 			// . H .
 			// . # .
 			// . . T
-			NextHeadPosition:    newPosition(2, 1),
-			CurrentHeadPosition: newPosition(1, 1),
-			CurrentTailPosition: newPosition(0, 2),
-			Expected:            newPosition(1, 1),
+			NextHeadPosition:    newPosition(1, 2),
+			CurrentTailPosition: newPosition(2, 0),
+			Expected:            false,
 		},
 	}
 
 	// act
 	for i, c := range cs {
-		g := newGrid()
-		out := g.nextTailPosition(c.CurrentHeadPosition, c.CurrentTailPosition, c.NextHeadPosition)
+		out := c.CurrentTailPosition.adjacent(c.NextHeadPosition)
 
 		// assert
-		if !reflect.DeepEqual(out, c.Expected) {
+		if out != c.Expected {
 			t.Errorf("Case: %v, Expected: %v, Actual: %v", i, c.Expected, out)
 		}
 	}

@@ -242,8 +242,6 @@ Simulate your complete hypothetical series of motions. How many positions does t
 
 Your puzzle answer was 6190.
 
-The first half of this puzzle is complete! It provides one gold star: *
-
 --- Part Two ---
 
 A rope snaps! Suddenly, the river is getting a lot closer than you remember. The bridge is still there, but some of the ropes that broke are now whipping toward you as you fall through the air!
@@ -676,8 +674,12 @@ Now, the tail (9) visits 36 positions (including s) at least once:
 .........########.........
 Simulate your complete series of motions on a larger rope with ten knots. How many positions does the tail of the rope visit at least once?
 
-Answer:  
+Your puzzle answer was 2516.
 
-Although it hasn't changed, you can still get your puzzle input.
+Both parts of this puzzle are complete! They provide two gold stars: **
+
+At this point, you should return to your Advent calendar and try another puzzle.
+
+If you still want to see it, you can get your puzzle input.
 
 You can also [Share] this puzzle.
