@@ -10,9 +10,33 @@ import (
 
 func main() {}
 
+type direction int64
+
+func newDirection(in string) direction {
+	switch in {
+	case "U":
+		return Up
+	case "D":
+		return Down
+	case "L":
+		return Left
+	case "R":
+		return Right
+	default:
+		panic(fmt.Sprintf("unsupported direction: %s", in))
+	}
+}
+
+const (
+	Up direction = iota
+	Down
+	Left
+	Right
+)
+
 type instruction struct {
-	Direction string
-	Count     int
+	Direction direction
+	Distance  int
 }
 
 type instructions []instruction
@@ -30,14 +54,14 @@ func newInstructions(in string) instructions {
 			continue
 		}
 
-		c, err := strconv.Atoi(exp[2])
+		d, err := strconv.Atoi(exp[2])
 		if err != nil {
 			continue
 		}
 
 		out = append(out, instruction{
-			Direction: exp[1],
-			Count:     c,
+			Direction: newDirection(exp[1]),
+			Distance:  d,
 		})
 	}
 
@@ -48,19 +72,19 @@ type position struct {
 	X, Y int
 }
 
-func (i position) key() string {
+func (i position) string() string {
 	return fmt.Sprintf("%v:%v", i.X, i.Y)
 }
 
-func (i position) adjacent(p position) bool {
-	if i.X == p.X && i.Y == p.Y {
+func (i position) adjacent(in position) bool {
+	if i.X == in.X && i.Y == in.Y {
 		// . . .
 		// . S .
 		// . . .
 		return true
 	}
 
-	if i.Y == p.Y && (i.X+1 == p.X || i.X-1 == p.X) {
+	if i.Y == in.Y && (i.X+1 == in.X || i.X-1 == in.X) {
 		// . . .
 		// . H T
 		// . . .
@@ -71,7 +95,7 @@ func (i position) adjacent(p position) bool {
 		return true
 	}
 
-	if i.Y-1 == p.Y && (i.X+1 == p.X || i.X-1 == p.X) {
+	if i.Y-1 == in.Y && (i.X+1 == in.X || i.X-1 == in.X) {
 		// . . .
 		// . H .
 		// T . .
@@ -82,7 +106,7 @@ func (i position) adjacent(p position) bool {
 		return true
 	}
 
-	if i.Y+1 == p.Y && (i.X+1 == p.X || i.X-1 == p.X) {
+	if i.Y+1 == in.Y && (i.X+1 == in.X || i.X-1 == in.X) {
 		// T . .
 		// . H .
 		// . . .
@@ -93,7 +117,7 @@ func (i position) adjacent(p position) bool {
 		return true
 	}
 
-	if i.X == p.X && (i.Y+1 == p.Y || i.Y-1 == p.Y) {
+	if i.X == in.X && (i.Y+1 == in.Y || i.Y-1 == in.Y) {
 		// . T .
 		// . H .
 		// . . .
@@ -107,61 +131,56 @@ func (i position) adjacent(p position) bool {
 	return false
 }
 
-func (i position) move(direction string) position {
-	switch direction {
-	case "U":
-		return newPosition(i.X, i.Y+1)
-	case "D":
-		return newPosition(i.X, i.Y-1)
-	case "L":
-		return newPosition(i.X-1, i.Y)
-	case "R":
-		return newPosition(i.X+1, i.Y)
-	default:
-		return i.clone()
+func (i *position) move(in direction) {
+	switch in {
+	case Up:
+		i.Y += 1
+	case Down:
+		i.Y -= 1
+	case Left:
+		i.X -= 1
+	case Right:
+		i.X += 1
 	}
 }
 
-func (i position) follow(in position) position {
-	n := i.clone()
-	if n.adjacent(in) {
-		return n
+func (i *position) follow(in position) {
+	if i.adjacent(in) {
+		return
 	}
 
 	if i.X-2 == in.X && i.Y == in.Y {
-		n = i.move("L")
+		i.move(Left)
 	}
 	if i.X+2 == in.X && i.Y == in.Y {
-		n = i.move("R")
+		i.move(Right)
 	}
 	if i.Y+2 == in.Y && i.X == in.X {
-		n = i.move("U")
+		i.move(Up)
 	}
 	if i.Y-2 == in.Y && i.X == in.X {
-		n = i.move("D")
+		i.move(Down)
 	}
 
-	if n.adjacent(in) {
-		return n
+	if i.adjacent(in) {
+		return
 	}
 
-	if n.Y > in.Y {
-		n = n.move("D")
+	if i.Y > in.Y {
+		i.move(Down)
 	}
 
-	if n.Y < in.Y {
-		n = n.move("U")
+	if i.Y < in.Y {
+		i.move(Up)
 	}
 
-	if n.X > in.X {
-		n = n.move("L")
+	if i.X > in.X {
+		i.move(Left)
 	}
 
-	if n.X < in.X {
-		n = n.move("R")
+	if i.X < in.X {
+		i.move(Right)
 	}
-
-	return n
 }
 
 func (i position) clone() position {
@@ -172,55 +191,16 @@ func newPosition(x, y int) position {
 	return position{x, y}
 }
 
-type grid struct {
-	TailLength    int
-	HeadPositions []position
-	TailPositions [][]position
-}
+type positions []position
 
-func (i *grid) applyInstruction(instruction instruction) {
-	for j := 0; j < instruction.Count; j++ {
-		chp := i.HeadPositions[len(i.HeadPositions)-1]
-		ctps := i.TailPositions[len(i.TailPositions)-1]
-		nhp := chp.move(instruction.Direction)
-
-		i.HeadPositions = append(i.HeadPositions, nhp)
-		i.TailPositions = append(i.TailPositions, i.nextTailPositions(nhp, ctps))
-	}
-}
-
-func (i grid) nextTailPositions(head position, ctps []position) []position {
-	out := []position{}
-	for j, p := range ctps {
-		pp := head.clone()
-		if len(out) > 0 {
-			pp = out[j-1]
-		}
-
-		out = append(out, p.follow(pp))
-	}
-
-	return out
-}
-
-func (i grid) extractTailPositions(in int) []position {
-	out := []position{}
-
-	for _, v := range i.TailPositions {
-		out = append(out, v[in])
-	}
-
-	return out
-}
-
-func (i grid) uniquePositions(positions []position) []position {
+func (i positions) unique() []position {
 	var (
 		up  = map[string]position{}
 		out = []position{}
 	)
 
-	for _, v := range positions {
-		up[v.key()] = v
+	for _, v := range i {
+		up[v.string()] = v
 	}
 
 	for _, v := range up {
@@ -230,7 +210,7 @@ func (i grid) uniquePositions(positions []position) []position {
 	return out
 }
 
-func (i grid) string(positions []position) string {
+func (i positions) string() string {
 	var (
 		minx = 0
 		maxx = 0
@@ -239,8 +219,8 @@ func (i grid) string(positions []position) string {
 		up   = map[string]position{}
 	)
 
-	for _, p := range positions {
-		up[p.key()] = p
+	for _, p := range i {
+		up[p.string()] = p
 
 		if p.X > maxx {
 			maxx = p.X
@@ -259,7 +239,7 @@ func (i grid) string(positions []position) string {
 	out := ""
 	for y := maxy; y >= miny; y-- {
 		for x := minx; x <= maxx; x++ {
-			if _, ok := up[newPosition(x, y).key()]; ok {
+			if _, ok := up[newPosition(x, y).string()]; ok {
 				if x == 0 && y == 0 {
 					out += "S"
 				} else {
@@ -275,8 +255,50 @@ func (i grid) string(positions []position) string {
 	return out
 }
 
+type grid struct {
+	TailLength    int
+	HeadPositions positions
+	TailPositions []positions
+}
+
+func (i *grid) applyInstruction(in instruction) {
+	for d := 0; d < in.Distance; d++ {
+		chp := i.HeadPositions[len(i.HeadPositions)-1]
+		ctps := i.TailPositions[len(i.TailPositions)-1]
+
+		// new head position
+		nhp := chp.clone()
+		nhp.move(in.Direction)
+		i.HeadPositions = append(i.HeadPositions, nhp)
+
+		// new tail positions
+		ntps := []position{}
+		for y, ctp := range ctps {
+			ptp := nhp.clone()
+			if len(ntps) > 0 {
+				ptp = ntps[y-1]
+			}
+
+			ntp := ctp.clone()
+			ntp.follow(ptp)
+			ntps = append(ntps, ntp)
+		}
+		i.TailPositions = append(i.TailPositions, ntps)
+	}
+}
+
+func (i grid) extractTailPositions(in int) positions {
+	out := positions{}
+
+	for _, v := range i.TailPositions {
+		out = append(out, v[in])
+	}
+
+	return out
+}
+
 func newGrid(tailLength int) grid {
-	tp := []position{}
+	tp := positions{}
 	for i := 0; i < tailLength; i++ {
 		tp = append(tp, newPosition(0, 0))
 	}
@@ -284,32 +306,19 @@ func newGrid(tailLength int) grid {
 	return grid{
 		TailLength:    tailLength,
 		HeadPositions: []position{newPosition(0, 0)},
-		TailPositions: [][]position{tp},
+		TailPositions: []positions{tp},
 	}
 }
 
-func exercise1(in string) (int, string) {
+func process(stream string, tailLength int) (int, string) {
 	var (
-		instructions = newInstructions(in)
-		grid         = newGrid(1)
+		instructions = newInstructions(stream)
+		grid         = newGrid(tailLength)
 	)
-	for _, instruction := range instructions {
-		grid.applyInstruction(instruction)
+	for _, v := range instructions {
+		grid.applyInstruction(v)
 	}
 
 	tp := grid.extractTailPositions(grid.TailLength - 1)
-	return len(grid.uniquePositions(tp)), grid.string(tp)
-}
-
-func exercise2(in string) (int, string) {
-	var (
-		instructions = newInstructions(in)
-		grid         = newGrid(9)
-	)
-	for _, instruction := range instructions {
-		grid.applyInstruction(instruction)
-	}
-
-	tp := grid.extractTailPositions(grid.TailLength - 1)
-	return len(grid.uniquePositions(tp)), grid.string(tp)
+	return len(tp.unique()), tp.string()
 }

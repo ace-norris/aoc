@@ -13,13 +13,13 @@ func Test_exercise1(t *testing.T) {
 	}{
 		{
 			Stream: `R 4
-									U 4
-									L 3
-									D 1
-									R 4
-									D 1
-									L 5
-									R 2`,
+					U 4
+					L 3
+					D 1
+					R 4
+					D 1
+					L 5
+					R 2`,
 			Expected: 13,
 		},
 		{
@@ -30,7 +30,7 @@ func Test_exercise1(t *testing.T) {
 
 	// act
 	for i, c := range cs {
-		count, vis := exercise1(c.Stream)
+		count, vis := process(c.Stream, 1)
 		if count < 100 {
 			fmt.Println(vis)
 		}
@@ -70,7 +70,6 @@ func Test_exercise2(t *testing.T) {
 					U 20`,
 			Expected: 36,
 		},
-
 		{
 			Stream:   stream,
 			Expected: 2516,
@@ -79,7 +78,7 @@ func Test_exercise2(t *testing.T) {
 
 	// act
 	for i, c := range cs {
-		count, vis := exercise2(c.Stream)
+		count, vis := process(c.Stream, 9)
 		if count < 200 {
 			fmt.Println(vis)
 		}
