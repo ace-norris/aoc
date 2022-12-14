@@ -190,8 +190,6 @@ Find the signal strength during the 20th, 60th, 100th, 140th, 180th, and 220th c
 
 Your puzzle answer was 12980.
 
-The first half of this puzzle is complete! It provides one gold star: *
-
 --- Part Two ---
 
 It seems like the X register controls the horizontal position of a sprite. Specifically, the sprite is 3 pixels wide, and the X register sets the horizontal position of the middle of that sprite. (In this system, there is no such thing as "vertical position": if the sprite's horizontal position puts its pixels where the CRT is currently drawing, then those pixels will be drawn.)
@@ -316,8 +314,6 @@ Allowing the program to run to completion causes the CRT to produce the followin
 #######.......#######.......#######.....
 Render the image given by your program. What eight capital letters appear on your CRT?
 
-Answer:  
+Your puzzle answer was BRJLFULP.
 
-Although it hasn't changed, you can still get your puzzle input.
-
-You can also [Share] this puzzle.
+Both parts of this puzzle are complete! They provide two gold stars: **
