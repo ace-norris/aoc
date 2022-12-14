@@ -261,7 +261,7 @@ type grid struct {
 	TailPositions []positions
 }
 
-func (i *grid) applyInstruction(in instruction) {
+func (i *grid) instruct(in instruction) {
 	for d := 0; d < in.Distance; d++ {
 		chp := i.HeadPositions[len(i.HeadPositions)-1]
 		ctps := i.TailPositions[len(i.TailPositions)-1]
@@ -316,7 +316,7 @@ func process(stream string, tailLength int) (int, string) {
 		grid         = newGrid(tailLength)
 	)
 	for _, v := range instructions {
-		grid.applyInstruction(v)
+		grid.instruct(v)
 	}
 
 	tp := grid.extractTailPositions(grid.TailLength - 1)
