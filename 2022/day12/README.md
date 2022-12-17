@@ -30,8 +30,6 @@ What is the fewest steps required to move from your current position to the loca
 
 Your puzzle answer was 449.
 
-The first half of this puzzle is complete! It provides one gold star: *
-
 --- Part Two ---
 
 As you walk up the hill, you suspect that the Elves will want to turn this into a hiking trail. The beginning isn't very scenic, though; perhaps you can find a better starting point.
@@ -56,8 +54,6 @@ This path reaches the goal in only 29 steps, the fewest possible.
 
 What is the fewest steps required to move starting from any square with elevation a to the location that should get the best signal?
 
-Answer:  
+Your puzzle answer was 443.
 
-Although it hasn't changed, you can still get your puzzle input.
-
-You can also [Share] this puzzle.
+Both parts of this puzzle are complete! They provide two gold stars: **

@@ -13,105 +13,71 @@ type coordinate struct {
 	y int
 }
 
-func (i coordinate) getValue(rows [][]rune) (rune, bool) {
-	if i.x < 0 || i.x >= len(rows) || i.y < 0 || i.y >= len(rows[i.x]) {
-		return -1, false
-	}
-
-	return rows[i.x][i.y], true
+func newCoordinate(x, y int) coordinate {
+	return coordinate{x, y}
 }
 
-func (i coordinate) canMove(rows [][]rune, to coordinate) bool {
-	fv, _ := i.getValue(rows)
+type rows [][]rune
 
-	tv, ok := to.getValue(rows)
-	if !ok {
-		return false
+func (i rows) find(in rune) *coordinate {
+	for y, row := range i {
+		for x, cell := range row {
+			if cell == in {
+				c := newCoordinate(x, y)
+				return &c
+			}
+		}
 	}
 
-	return tv-fv <= 1
+	return nil
 }
 
-func (i coordinate) getAdjacent(rows [][]rune) []coordinate {
-	var (
-		left  = coordinate{i.x - 1, i.y}
-		right = coordinate{i.x + 1, i.y}
-		up    = coordinate{i.x, i.y - 1}
-		down  = coordinate{i.x, i.y + 1}
-		out   = []coordinate{}
-	)
-
-	if ok := i.canMove(rows, left); ok {
-		out = append(out, left)
-	}
-	if ok := i.canMove(rows, right); ok {
-		out = append(out, right)
-	}
-	if ok := i.canMove(rows, up); ok {
-		out = append(out, up)
-	}
-	if ok := i.canMove(rows, down); ok {
-		out = append(out, down)
-	}
-
-	return out
-}
-
-func (i coordinate) isEnd(end coordinate) bool {
-	return i.x == end.x && i.y == end.y
-}
-
-type grid struct {
-	rows  [][]rune
-	start coordinate
-	end   coordinate
-}
-
-func newGrid(in string, start, first, last, end rune) *grid {
+func newRows(in string) rows {
 	var (
 		scanner = bufio.NewScanner(strings.NewReader(in))
-		y       = 0
-		x       = 0
-		out     = &grid{
-			rows: [][]rune{},
-		}
+		out     = rows{}
 	)
 	for scanner.Scan() {
-		y = 0
-
 		var (
 			cs = strings.TrimSpace(scanner.Text())
 			r  = []rune{}
 		)
 		for _, c := range cs {
-			if c == start {
-				out.start = coordinate{x, y}
-				c = first
-			}
-			if c == end {
-				out.end = coordinate{x, y}
-				c = last
-			}
-
 			r = append(r, c)
-			y++
 		}
-		out.rows = append(out.rows, r)
-		x++
+		out = append(out, r)
 	}
 
 	return out
 }
 
-func (i grid) bfs() int {
+type move func(i grid, a, b coordinate) bool
+
+type end func(i grid, a, b coordinate) bool
+
+type grid struct {
+	rows rows
+	end  end
+	move move
+}
+
+func newGrid(rows rows, move move, end end) *grid {
+	return &grid{
+		rows: rows,
+		move: move,
+		end:  end,
+	}
+}
+
+func (i grid) bfs(start coordinate) int {
 	var (
 		visited = make(map[coordinate]int)
 		queue   = []coordinate{}
 		curr    coordinate
 	)
 
-	queue = append(queue, i.start)
-	visited[i.start] = 0
+	queue = append(queue, start)
+	visited[start] = 0
 
 	for len(queue) > 0 {
 		curr = queue[0]
@@ -119,13 +85,14 @@ func (i grid) bfs() int {
 
 		var (
 			value = visited[curr]
-			next  = curr.getAdjacent(i.rows)
+			next  = i.getAdjacent(curr)
 		)
 
 		for _, n := range next {
-			if n.isEnd(i.end) {
+			if i.end != nil && i.end(i, curr, n) {
 				return value + 1
 			}
+
 			if _, ok := visited[n]; ok {
 				continue
 			}
@@ -139,22 +106,109 @@ func (i grid) bfs() int {
 	return -1
 }
 
-func exercise1(stream string) int {
-	grid := newGrid(stream, 'S', 'a', 'z', 'E')
-
-	return grid.bfs()
-}
-
-func exercise2(in string) int {
-	scanner := bufio.NewScanner(strings.NewReader(in))
-
+func (i grid) getAdjacent(c coordinate) []coordinate {
 	var (
-		total = 0
+		left  = newCoordinate(c.x-1, c.y)
+		right = newCoordinate(c.x+1, c.y)
+		up    = newCoordinate(c.x, c.y-1)
+		down  = newCoordinate(c.x, c.y+1)
+		out   = []coordinate{}
 	)
-	for scanner.Scan() {
-		// line := strings.TrimSpace(scanner.Text())
-		total++
+
+	if i.move == nil {
+		return out
 	}
 
-	return total
+	if ok := i.move(i, c, left); ok {
+		out = append(out, left)
+	}
+	if ok := i.move(i, c, right); ok {
+		out = append(out, right)
+	}
+	if ok := i.move(i, c, up); ok {
+		out = append(out, up)
+	}
+	if ok := i.move(i, c, down); ok {
+		out = append(out, down)
+	}
+
+	return out
+}
+
+func (i grid) getValue(c coordinate) (rune, bool) {
+	if c.y < 0 || c.y >= len(i.rows) || c.x < 0 || c.x >= len(i.rows[c.y]) {
+		return -1, false
+	}
+
+	return i.rows[c.y][c.x], true
+}
+
+func exercise1(stream string) int {
+	var (
+		rows = newRows(stream)
+		end  = func(i grid, a, b coordinate) bool {
+			av, _ := i.getValue(a)
+			bv, _ := i.getValue(b)
+
+			return av == 'z' && bv == 'E'
+		}
+		move = func(i grid, a, b coordinate) bool {
+			av, _ := i.getValue(a)
+			bv, ok := i.getValue(b)
+			if !ok {
+				return false
+			}
+
+			if av == 'S' && bv == 'a' || av == 'z' && bv == 'E' {
+				return true
+			}
+
+			return bv-av <= 1
+		}
+		grid = newGrid(rows, move, end)
+	)
+
+	start := rows.find('S')
+	if start == nil {
+		panic("could not find start")
+	}
+
+	return grid.bfs(*start)
+}
+
+func exercise2(stream string) int {
+	var (
+		rows = newRows(stream)
+		end  = func(i grid, a, b coordinate) bool {
+			av, _ := i.getValue(a)
+			bv, _ := i.getValue(b)
+
+			return av == 'b' && bv == 'a' || av == 'b' && bv == 'S'
+		}
+		move = func(i grid, a, b coordinate) bool {
+			av, _ := i.getValue(a)
+			bv, ok := i.getValue(b)
+			if !ok {
+				return false
+			}
+
+			if av == 'E' {
+				return bv == 'z'
+			}
+
+			if bv == 'S' {
+				return av == 'a' || av == 'b'
+			}
+
+			return av-bv <= 1
+		}
+		grid = newGrid(rows, move, end)
+	)
+
+	start := rows.find('E')
+	if start == nil {
+		panic("could not find start")
+	}
+
+	return grid.bfs(*start)
 }
