@@ -40,14 +40,14 @@ If both values are lists, compare the first value of each list, then the second 
 If exactly one value is an integer, convert the integer to a list which contains that integer as its only value, then retry the comparison. For example, if comparing [0,0,0] and 2, convert the right value to [2] (a list containing 2); the result is then found by instead comparing [0,0,0] and [2].
 Using these rules, you can determine which of the pairs in the example are in the right order:
 
-== Pair 1 == true
+== Pair 1 ==
 - Compare [1,1,3,1,1] vs [1,1,5,1,1]
   - Compare 1 vs 1
   - Compare 1 vs 1
   - Compare 3 vs 5
     - Left side is smaller, so inputs are in the right order
 
-== Pair 2 == true
+== Pair 2 ==
 - Compare [[1],[2,3,4]] vs [[1],4]
   - Compare [1] vs [1]
     - Compare 1 vs 1
@@ -57,7 +57,7 @@ Using these rules, you can determine which of the pairs in the example are in th
       - Compare 2 vs 4
         - Left side is smaller, so inputs are in the right order
 
-== Pair 3 == false
+== Pair 3 ==
 - Compare [9] vs [[8,7,6]]
   - Compare 9 vs [8,7,6]
     - Mixed types; convert left to [9] and retry comparison
@@ -65,7 +65,7 @@ Using these rules, you can determine which of the pairs in the example are in th
       - Compare 9 vs 8
         - Right side is smaller, so inputs are not in the right order
 
-== Pair 4 == true
+== Pair 4 ==
 - Compare [[4,4],4,4] vs [[4,4],4,4,4]
   - Compare [4,4] vs [4,4]
     - Compare 4 vs 4
@@ -74,23 +74,23 @@ Using these rules, you can determine which of the pairs in the example are in th
   - Compare 4 vs 4
   - Left side ran out of items, so inputs are in the right order
 
-== Pair 5 == false
+== Pair 5 ==
 - Compare [7,7,7,7] vs [7,7,7]
   - Compare 7 vs 7
   - Compare 7 vs 7
   - Compare 7 vs 7
   - Right side ran out of items, so inputs are not in the right order
 
-== Pair 6 == true
+== Pair 6 ==
 - Compare [] vs [3]
   - Left side ran out of items, so inputs are in the right order
 
-== Pair 7 == false
+== Pair 7 ==
 - Compare [[[]]] vs [[]]
   - Compare [[]] vs []
     - Right side ran out of items, so inputs are not in the right order
 
-== Pair 8 == false
+== Pair 8 ==
 - Compare [1,[2,[3,[4,[5,6,7]]]],8,9] vs [1,[2,[3,[4,[5,6,0]]]],8,9]
   - Compare 1 vs 1
   - Compare [2,[3,[4,[5,6,7]]]] vs [2,[3,[4,[5,6,0]]]]
@@ -108,8 +108,42 @@ What are the indices of the pairs that are already in the right order? (The firs
 
 Determine which pairs of packets are already in the right order. What is the sum of the indices of those pairs?
 
-To begin, get your puzzle input.
+Your puzzle answer was 6428.
 
-Answer:  
+--- Part Two ---
 
-You can also [Share] this puzzle.
+Now, you just need to put all of the packets in the right order. Disregard the blank lines in your list of received packets.
+
+The distress signal protocol also requires that you include two additional divider packets:
+
+[[2]]
+[[6]]
+Using the same rules as before, organize all packets - the ones in your list of received packets as well as the two divider packets - into the correct order.
+
+For the example above, the result of putting the packets in the correct order is:
+
+[]
+[[]]
+[[[]]]
+[1,1,3,1,1]
+[1,1,5,1,1]
+[[1],[2,3,4]]
+[1,[2,[3,[4,[5,6,0]]]],8,9]
+[1,[2,[3,[4,[5,6,7]]]],8,9]
+[[1],4]
+[[2]]
+[3]
+[[4,4],4,4]
+[[4,4],4,4,4]
+[[6]]
+[7,7,7]
+[7,7,7,7]
+[[8,7,6]]
+[9]
+Afterward, locate the divider packets. To find the decoder key for this distress signal, you need to determine the indices of the two divider packets and multiply them together. (The first packet is at index 1, the second packet is at index 2, and so on.) In this example, the divider packets are 10th and 14th, and so the decoder key is 140.
+
+Organize all of the packets into the correct order. What is the decoder key for the distress signal?
+
+Your puzzle answer was 22464.
+
+Both parts of this puzzle are complete! They provide two gold stars: **

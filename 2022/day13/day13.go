@@ -3,61 +3,10 @@ package day13
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
+	"sort"
 	"strings"
 )
-
-type result int64
-
-const (
-	equal result = iota
-	left
-	right
-)
-
-func newResult(lv, rv interface{}) result {
-	lpv, _ := lv.(float64)
-	rpv, _ := rv.(float64)
-
-	if lpv == rpv {
-		return equal
-	} else if lpv < rpv {
-		return left
-	} else {
-		return right
-	}
-}
-
-func compareValues(l, r values) result {
-	ml := len(l)
-	if len(r) > ml {
-		ml = len(r)
-	}
-
-	for j := 0; j < ml; j++ {
-		var (
-			lv = l.extract(j)
-			rv = r.extract(j)
-		)
-		if lv == nil {
-			return left
-		}
-		if rv == nil {
-			return right
-		}
-
-		if !isValues(lv) && !isValues(rv) {
-			if r := newResult(lv, rv); r != equal {
-				return r
-			}
-		} else {
-			if r := compareValues(newValues(lv), newValues(rv)); r != 0 {
-				return r
-			}
-		}
-	}
-
-	return equal
-}
 
 type values []interface{}
 
@@ -69,7 +18,87 @@ func (i values) extract(index int) interface{} {
 	return nil
 }
 
-func newValues(in interface{}) values {
+func (i values) indexOf(value string) int {
+	for i, v := range i {
+		if fmt.Sprintf("%v", v) == value {
+			return i
+		}
+	}
+	return -1
+}
+
+func (i values) Compare(r values) int {
+	ml := len(i)
+	if len(r) > ml {
+		ml = len(r)
+	}
+
+	for j := 0; j < ml; j++ {
+		var (
+			lv = i.extract(j)
+			rv = r.extract(j)
+		)
+		if lv == nil {
+			return -1
+		}
+		if rv == nil {
+			return 1
+		}
+
+		if !isValues(lv) && !isValues(rv) {
+			lpv, _ := lv.(float64)
+			rpv, _ := rv.(float64)
+
+			if lpv < rpv {
+				return -1
+			} else if lpv > rpv {
+				return 1
+			}
+		} else {
+			if r := valueToValues(lv).Compare(valueToValues(rv)); r != 0 {
+				return r
+			}
+		}
+	}
+
+	return 0
+}
+
+func (i values) Len() int {
+	return len(i)
+}
+
+func (i values) Less(a, b int) bool {
+	l, _ := i[a].(values)
+	r, _ := i[b].(values)
+
+	return l.Compare(r) == -1
+}
+
+func (i values) Swap(a, b int) {
+	i[a], i[b] = i[b], i[a]
+}
+
+func newValues(in string) values {
+	var (
+		scanner = bufio.NewScanner(strings.NewReader(in))
+		out     = values{}
+	)
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+		v := values{}
+		json.Unmarshal([]byte(line), &v)
+		out = append(out, v)
+	}
+
+	return out
+}
+
+func valueToValues(in interface{}) values {
 	if v, ok := in.([]interface{}); ok {
 		return v
 	}
@@ -93,10 +122,6 @@ type pair struct {
 	index int
 	left  values
 	right values
-}
-
-func (i pair) compare() result {
-	return compareValues(i.left, i.right)
 }
 
 type pairs []pair
@@ -138,7 +163,7 @@ func Exercise1(stream string) int {
 	)
 
 	for _, v := range pairs {
-		if r := v.compare(); r == left {
+		if r := v.left.Compare(v.right); r == -1 {
 			out += v.index
 		}
 	}
@@ -147,14 +172,8 @@ func Exercise1(stream string) int {
 }
 
 func Exercise2(stream string) int {
-	var (
-		scanner = bufio.NewScanner(strings.NewReader(stream))
-		out     = 0
-	)
-	for scanner.Scan() {
-		// line := strings.TrimSpace(scanner.Text())
-		out++
-	}
+	values := newValues(stream)
+	sort.Sort(values)
 
-	return out
+	return (values.indexOf("[[2]]") + 1) * (values.indexOf("[[6]]") + 1)
 }

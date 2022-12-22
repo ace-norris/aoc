@@ -60,14 +60,44 @@ func Test_Exercise2(t *testing.T) {
 		Expected int
 	}{
 		{
+			Stream: `[1,1,3,1,1]
+			[1,1,5,1,1]
+			
+			[[1],[2,3,4]]
+			[[1],4]
+			
+			[9]
+			[[8,7,6]]
+			
+			[[4,4],4,4]
+			[[4,4],4,4,4]
+			
+			[7,7,7,7]
+			[7,7,7]
+			
+			[]
+			[3]
+			
+			[[[]]]
+			[[]]
+			
+			[1,[2,[3,[4,[5,6,7]]]],8,9]
+			[1,[2,[3,[4,[5,6,0]]]],8,9]`,
+			Expected: 140,
+		},
+		{
 			Stream:   stream,
-			Expected: 0,
+			Expected: 22464,
 		},
 	}
 
 	// act
 	for i, c := range cs {
-		out := Exercise2(c.Stream)
+		s := c.Stream + `
+[[2]]
+[[6]]
+`
+		out := Exercise2(s)
 
 		// assert
 		if out != c.Expected {
